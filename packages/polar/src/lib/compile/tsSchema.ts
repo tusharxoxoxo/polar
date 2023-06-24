@@ -12,7 +12,8 @@ import { findAndParseTypes, findExecuteMsg, findQueryMsg } from "./utils";
 export async function generateTsSchema (
   name: string,
   schemas: any[], // eslint-disable-line  @typescript-eslint/no-explicit-any
-  outPath: string
+  outPath: string,
+  skipSchemaErrors: boolean
 ): Promise<void> {
   const Contract = pascal(name) + 'Contract.ts';
 
@@ -27,9 +28,15 @@ export async function generateTsSchema (
 
   const body = [];
 
-  body.push(
-    w.importStmt(['Contract', 'polarTypes', 'Coin'], 'secret-polar')
-  );
+  if (Object.prototype.hasOwnProperty.call(typeHash, 'Coin')) {
+    body.push(
+      w.importStmt(['Contract', 'polarTypes'], 'secret-polar')
+    );
+  } else {
+    body.push(
+      w.importStmt(['Contract', 'polarTypes', 'Coin'], 'secret-polar')
+    );
+  }
 
   // TYPES
   Object.values(typeHash).forEach(type => {
@@ -43,12 +50,21 @@ export async function generateTsSchema (
     QueryClient = pascal(`${name}QueryContract`);
     ReadOnlyInstance = pascal(`${name}ReadOnlyInterface`);
 
-    body.push(
-      w.createQueryInterface(ReadOnlyInstance, QueryMsg as any) // eslint-disable-line  @typescript-eslint/no-explicit-any
-    );
-    body.push(
-      w.createQueryClass(QueryClient, ReadOnlyInstance, "Contract", QueryMsg as any) // eslint-disable-line  @typescript-eslint/no-explicit-any
-    );
+    const queryInterface = await w.createQueryInterface(
+      ReadOnlyInstance,
+      QueryMsg as any,
+      skipSchemaErrors
+    ); // eslint-disable-line  @typescript-eslint/no-explicit-any
+    body.push(queryInterface);
+
+    const queryClass = await w.createQueryClass(
+      QueryClient,
+      ReadOnlyInstance,
+      "Contract",
+      QueryMsg as any,
+      skipSchemaErrors
+    ); // eslint-disable-line  @typescript-eslint/no-explicit-any
+    body.push(queryClass);
   }
 
   // execute messages
@@ -58,22 +74,23 @@ export async function generateTsSchema (
       Client = pascal(`${name}Contract`);
       Instance = pascal(`${name}Interface`);
 
-      body.push(
-        w.createExecuteInterface(
-          Instance,
-          ReadOnlyInstance,
-          ExecuteMsg as any // eslint-disable-line  @typescript-eslint/no-explicit-any
-        )
+      const executeInterface = await w.createExecuteInterface(
+        Instance,
+        ReadOnlyInstance,
+        ExecuteMsg as any, // eslint-disable-line  @typescript-eslint/no-explicit-any
+        skipSchemaErrors
       );
-      body.push(
-        w.createExecuteClass(
-          Client,
-          Instance,
-          QueryClient as string,
-          ExecuteMsg as any, // eslint-disable-line  @typescript-eslint/no-explicit-any
-          name
-        )
+      body.push(executeInterface);
+
+      const executeClass = await w.createExecuteClass(
+        Client,
+        Instance,
+        QueryClient as string,
+        ExecuteMsg as any, // eslint-disable-line  @typescript-eslint/no-explicit-any
+        name,
+        skipSchemaErrors
       );
+      body.push(executeClass);
     }
   }
 

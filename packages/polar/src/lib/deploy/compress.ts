@@ -21,10 +21,11 @@ export async function compress (
 
   if (!fs.existsSync(srcPath)) {
     console.log(`${contractName}.wasm file does not exist in artifacts dir, compiling...`);
-    await compile(false, [], false, false);
+    await compile(false, [], false, false, false);
   }
 
-  const compressCmd = `npx wasm-opt -Oz ${srcPath} -o ${destPath}`;
+  // const compressCmd = `npx wasm-opt -Oz ${srcPath} -o ${destPath}`;
+  const compressCmd = `cp ${srcPath} ${destPath}`;
 
   console.log(chalk.greenBright(`Creating compressed .wasm file for ${contractName}`));
   execSync(compressCmd, { stdio: 'inherit' });

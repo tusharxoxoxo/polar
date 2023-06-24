@@ -13,7 +13,6 @@
 // fields), we don't use `extends` as that can interfere with plugin authors
 // trying to augment the config types.
 // Networks config\
-import { FeePool } from "secretjs/dist/protobuf_stuff/cosmos/distribution/v1beta1/distribution";
 
 import * as types from "./internal/core/params/argument-types";
 
@@ -26,6 +25,10 @@ export interface Account {
 export interface Coin {
   readonly denom: string
   readonly amount: string
+}
+
+export interface FeePool {
+  community_pool: Coin[]
 }
 
 export interface TxnStdFee {
@@ -59,11 +62,12 @@ export interface Checkpoints {
 
 export interface CheckpointInfo {
   deployInfo?: DeployInfo
-  instantiateInfo?: InstantiateInfo
+  instantiateInfo?: [InstantiateInfo]
   metadata?: Map<string, string>
 }
 
 export interface InstantiateInfo {
+  instantiateTag: string
   contractAddress: string
   instantiateTimestamp: string
 }
